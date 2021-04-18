@@ -1,11 +1,11 @@
 '''ADALINE'''
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 import numpy as np
 import os
 import pandas as pd
 from adaline import AdalineGD
+from adaline import plot_dicision_regions
 
 
 # データの読み込み
@@ -49,33 +49,6 @@ X_std[:, 1] = (X[:, 1] - X[:, 1].mean()) / X[:, 1].std()
 # 再度学習率(0.01)で実行
 ada_gd = AdalineGD(n_iter=15, eta=0.01)
 ada_gd.fit(X_std, y)
-
-# 決定境界の可視化
-def plot_dicision_regions(X, y, classifier, resolution=0.02):
-    # マーカーとカラーアップの準備
-    markers = ('s', 'x', 'o', '^', 'v')
-    colors = ('red', 'blue', 'lightgreen', 'gray', 'cyan')
-    cmap = ListedColormap(colors[:len(np.unique(y))])
-
-    # 決定境界のプロット
-    x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    x2_min, x2_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    # グリッドポイントの生成
-    xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, resolution),
-        np.arange(x2_min, x2_max, resolution))
-    # 特徴量を1次元配列にして予測
-    Z = classifier.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
-    Z = Z.reshape(xx1.shape)
-
-    plt.contourf(xx1, xx2, Z, alpha=0.3, cmap=cmap)
-    plt.xlim(xx1.min(), xx1.max())
-    plt.ylim(xx2.min(), xx2.max())
-
-    # クラスごとに訓練データをプロット
-    for idx, cl in enumerate(np.unique(y)):
-        plt.scatter(x=X[y==cl, 0], y=X[y==cl, 1],
-            alpha=0.8, c=colors[idx], marker = markers[idx],
-            label=cl, edgecolors='black')
 
 # 境界領域のプロット
 plot_dicision_regions(X_std, y, classifier=ada_gd)
