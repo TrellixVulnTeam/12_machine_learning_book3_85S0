@@ -1,3 +1,5 @@
+'''ロジスティック回帰モデル(sk-learn)'''
+
 from sklearn import datasets
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -5,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-from sklearn_pra import plot_dicision_regions
+from logistic import plot_decision_regions2
 
 
 # irisのデータセットをロード
@@ -34,7 +36,7 @@ lr = LogisticRegression(C=100.0, random_state=1, solver='lbfgs', multi_class='ov
 lr.fit(X_train_std, y_train)
 
 # 決定領域をプロット
-plot_dicision_regions(X_combined_std, y_combined, classifier=lr,
+plot_decision_regions2(X_combined_std, y_combined, classifier=lr,
     test_idx=range(105, 150))
 plt.xlabel('petal length [standardized]')
 plt.ylabel('petal width [standardized]')

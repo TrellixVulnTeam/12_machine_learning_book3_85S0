@@ -1,14 +1,13 @@
-'''ロジスティック回帰モデル'''
+'''k最近傍法'''
 
 from sklearn import datasets
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Perceptron
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
-from logistic import plot_decision_regions
-from logistic import LogisticRegressionGD
+from logistic import plot_decision_regions2
 
 
 # irisのデータセットをロード
@@ -27,17 +26,17 @@ sc.fit(X_train)
 # 平均と標準偏差を用いて標準化
 X_train_std = sc.transform(X_train)
 X_test_std = sc.transform(X_test)
+# 訓練データとテストデータの結合
+X_combined_std = np.vstack((X_train_std, X_test_std))
+y_combined = np.hstack((y_train, y_test))
 
 
-X_train_01_subset = X_train_std[(y_train == 0) | (y_train == 1)]
-y_train_01_subset = y_train[(y_train == 0) | (y_train == 1)]
+# k最近傍法のインスタンスを生成
+knn = KNeighborsClassifier(n_neighbors=5, p=2, metric='minkowski')
+knn.fit(X_train_std, y_train)
 
-# ロジスティック回帰のインスタンスを生成
-lrgd = LogisticRegressionGD(eta=0.05, n_iter=1000, random_state=1)
-lrgd.fit(X_train_01_subset, y_train_01_subset)
-
-# 決定領域をプロット
-plot_decision_regions(X=X_train_01_subset, y=y_train_01_subset, classifier=lrgd)
+plot_decision_regions2(X_combined_std, y_combined,
+    classifier=knn, test_idx=range(105, 150))
 plt.xlabel('petal length [standardized]')
 plt.ylabel('petal width [standardized]')
 plt.legend(loc='upper left')
