@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from skPCA import plot_decision_regions
+from sklearn.linear_model import LogisticRegression
 
 
 '''主成分分析(PCA)'''
@@ -80,5 +84,44 @@ for l, c, m in zip(np.unique(y_train), colors, markers):
 plt.xlabel('PC 1')
 plt.ylabel('PC 2')
 plt.legend(loc='lower left')
+plt.tight_layout()
+plt.show()
+
+
+'''sklearnでのPCA'''
+# 主成分数を指定してPCAインスタンスを生成
+pca = PCA(n_components=2)
+# 次元削減
+X_train_pca = pca.fit_transform(X_train_std)
+X_test_pca = pca.transform(X_test_std)
+# ロジスティック回帰のインスタンスを生成
+lr = LogisticRegression(multi_class='ovr', random_state=1, solver='lbfgs')
+# 削減したデータセットでロジスティック回帰モデルを適合
+lr = lr.fit(X_train_pca, y_train)
+# 決定境界をプロット
+plot_decision_regions(X_train_pca, y_train, classifier=lr)
+plt.xlabel('PC 1')
+plt.ylabel('PC 2')
+plt.legend(loc='lower left')
+plt.tight_layout()
+plt.show()
+
+# 決定境界をプロット
+plot_decision_regions(X_test_pca, y_test, classifier=lr)
+plt.xlabel('PC 1')
+plt.ylabel('PC 2')
+plt.legend(loc='lower left')
+plt.tight_layout()
+plt.show()
+
+'''sklearnによる分散説明率の計算'''
+pca = PCA(n_components=None)
+X_train_pca = pca.fit_transform(X_train_std)
+var_data = pca.explained_variance_ratio_
+plt.bar(range(1, 14), var_data, alpha=0.5, align='center',
+    label='Individual explained variance')
+plt.ylabel('Explained variance ratio')
+plt.xlabel('Principal component index')
+plt.legend(loc='best')
 plt.tight_layout()
 plt.show()
