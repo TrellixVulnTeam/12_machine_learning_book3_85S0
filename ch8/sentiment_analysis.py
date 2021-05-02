@@ -1,3 +1,4 @@
+'''感情分析'''
 import re
 import pandas as pd
 import numpy as np
@@ -101,6 +102,7 @@ lr_tfidf = Pipeline([('vect', tfidf),
 
 gs_lr_tfidf = GridSearchCV(lr_tfidf, param_grid, scoring='accuracy',
     cv=5, verbose=2, n_jobs=-1)
+gs_lr_tfidf.fit(X_train, y_train)
 
 pbar = pyprind.ProgBar(50000)
 
