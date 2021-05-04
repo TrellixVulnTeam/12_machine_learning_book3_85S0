@@ -6,11 +6,14 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import validation_curve
+from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import make_pipeline
 
 
@@ -129,3 +132,45 @@ plt.ylabel('Accuracy')
 plt.ylim([0.8, 1.0])
 plt.tight_layout()
 plt.show()
+
+
+#%% グリッドサーチによるハイパーパラメータのチューニング
+pipe_svc = make_pipeline(StandardScaler(), SVC(random_state=1))
+
+param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+# ハイパーパラメータのリスト
+param_grid = [{'svc__C': param_range,
+               'svc__kernel': ['linear']},
+              {'svc__C': param_range,
+               'svc__gamma': param_range,
+               'svc__kernel': ['rbf']}]
+
+gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid,
+    scoring='accuracy', refit=True, cv=10, n_jobs=-1)
+gs = gs.fit(X_train, y_train)
+
+# モデルの最良スコアを出力
+print(gs.best_score_)
+# 最良スコアとなるパラメータ値を出力
+print(gs.best_params_)
+
+# テストデータセットによるモデルの評価
+clf = gs.best_estimator_
+# gsのrefit=Trueならいらない
+# clf.fit(X_train, y_train)
+print('Test accuracy: %.3f' % clf.score(X_test, y_test))
+
+
+#%% 入れ子式の交差検証
+gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid,
+    scoring='accuracy', cv=2)
+scores = cross_val_score(gs, X_train, y_train, scoring='accuracy',
+    cv=5)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+# 決定木分類器との比較
+gs = GridSearchCV(estimator=DecisionTreeClassifier(random_state=0),
+    param_grid=[{'max_depth': [1, 2, 3, 4, 5, 6, 7, None]}],
+    scoring='accuracy', cv=2)
+scores = cross_val_score(gs, X_train, y_train, scoring='accuracy', cv=5)
+print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
