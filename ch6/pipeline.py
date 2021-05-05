@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
+from sklearn.utils import resample
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold
@@ -14,13 +15,17 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import validation_curve
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+from sklearn.metrics import precision_score, recall_score, f1_score
+from distutils.version import LooseVersion as Version
+from scipy import interp
 from sklearn.pipeline import make_pipeline
 
 
 # データの準備
-df = pd.read_csv('https://archive.ics.uci.edu/ml/\
-machine-learning-databases/breast-cancer-wisconsin/wdbc.data',
-header = None)
+df = pd.read_csv('/Users/rukaoide/Library/Mobile Documents/\
+com~apple~CloudDocs/Documents/Python/12_machine_learning_book3/\
+ch6/wdbc.txt', header = None)
 
 df.head()
 df.shape
@@ -41,7 +46,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # パイプラインで変換器を推定器を結合する
 pipe_lr = make_pipeline(StandardScaler(), PCA(n_components=2),
     LogisticRegression(random_state=1, solver='lbfgs'))
-
+#%%
 pipe_lr.fit(X_train, y_train)
 y_pred = pipe_lr.predict(X_test)
 print('Test Accuracy: %.3f' % pipe_lr.score(X_test, y_test))
@@ -174,3 +179,113 @@ gs = GridSearchCV(estimator=DecisionTreeClassifier(random_state=0),
     scoring='accuracy', cv=2)
 scores = cross_val_score(gs, X_train, y_train, scoring='accuracy', cv=5)
 print('CV accuracy: %.3f +/- %.3f' % (np.mean(scores), np.std(scores)))
+
+
+#%% 混合行列
+pipe_svc.fit(X_train, y_train)
+y_pred = pipe_svc.predict(X_test)
+# テストと予測データから混合行列を生成
+confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
+print(confmat)
+
+# グラブ化する
+# 図のサイズを指定する
+fig, ax = plt.subplots(figsize=(2.5, 2.5))
+# matshow関数で行列からヒートマップを描画
+ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+for i in range(confmat.shape[0]):
+    for j in range(confmat.shape[1]):
+        ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+
+plt.xlabel('Predicted label')
+plt.ylabel('True label')
+
+plt.tight_layout()
+plt.show()
+
+# 適合率、再現率、F1スコアを出力
+print('Precision: %.3f' % precision_score(y_true=y_test, y_pred=y_pred))
+print('Recall: %.3f' % recall_score(y_true=y_test, y_pred=y_pred))
+print('F1: %.3f' % f1_score(y_true=y_test, y_pred=y_pred))
+
+
+#%% ROC曲線をプロット
+# スケーリング、主成分分析、ロジスティック回帰を指定
+pipe_lr = make_pipeline(StandardScaler(), PCA(n_components=2),
+    LogisticRegression(penalty='l2', random_state=1, solver='lbfgs', C=100.0))
+
+# 2つの特徴量を抽出
+X_train2 = X_train[:, [4, 14]]
+
+# 層化k分割交差検証イテレータを表すクラスをインスタンス化
+cv = list(StratifiedKFold(n_splits=3).split(X_train, y_train))
+fig = plt.figure(figsize=(7, 5))
+mean_tpr = 0.0
+
+# 0から1までの間で100個の要素を生成
+mean_fpr = np.linspace(0, 1, 100)
+all_tpr = []
+
+for i, (train, test) in enumerate(cv):
+    # predict_probaで確率を予測。fitで適合させる。
+    probas = pipe_lr.fit(
+        X_train2[train], y_train[train]).predict_proba(X_train2[test])
+    # roc_curveでROC曲線の性能を計算してプロット
+    fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
+    # FPR(x軸)とTPR(y軸)を線形補間
+    mean_tpr += interp(mean_fpr, fpr, tpr)
+    mean_tpr[0] = 0.0
+    # 曲線下面積(AUC)を計算
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr,
+        label='ROC fold %d (area = %0.2f)' % (i+1, roc_auc))
+
+# 当て推量をプロット
+plt.plot([0, 1], [0, 1], linestyle='--', color=(0.6,0.6,0.6),
+    label='Random guessing')
+# FPR、TPR、ROC、AUSそれぞれの平均を計算してプロット
+mean_tpr /= len(cv)
+mean_tpr[-1] = 1.0
+mean_auc = auc(mean_fpr, mean_tpr)
+plt.plot(mean_fpr, mean_tpr, 'k--',
+    label='Mean ROC (area = %0.2f)' % mean_auc, lw=2)
+# 完全に予測が正解した時のROC曲線をプロット
+plt.plot([0, 0, 1], [0, 1, 1], linestyle=':', color='black',
+    label='Perfect performance')
+# グラブの各項目を設定
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.legend(loc="lower right")
+
+plt.tight_layout()
+plt.show()
+
+
+#%% クラスの不均衡に対処する
+# 不均衡なデータセットの作成
+X_imb = np.vstack((X[y == 0], X[y == 1][:40]))
+y_imb = np.hstack((y[y == 0], y[y == 1][:40]))
+
+# クラスの不均衡具合を表示
+y_pred = np.zeros(y_imb.shape[0])
+np.mean(y_pred == y_imb) * 100
+
+# 少数派クラスのアップサンプリング
+# アップサンプリングする前のクラス1のデータ個数
+print('Number of class 1 examples before:', X_imb[y_imb == 1].shape[0])
+# データ点の個数がクラス0と同じになるまで新しいデータ点を復元抽出
+X_upsampled, y_upsampled = resample(X_imb[y_imb == 1],
+    y_imb[y_imb == 1], replace=True, n_samples=X_imb[y_imb == 0].shape[0],
+    random_state=123)
+# アップサンプリングした後のクラス1のデータ個数
+print('Number of class 1 examples after:', X_upsampled.shape[0])
+
+# 均衡なデータセットの生成
+X_bal = np.vstack((X[y == 0], X_upsampled))
+y_bal = np.hstack((y[y == 0], y_upsampled))
+
+# クラスの均衡具合を表示
+y_pred = np.zeros(y_bal.shape[0])
+np.mean(y_pred == y_bal) * 100
