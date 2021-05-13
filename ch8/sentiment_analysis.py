@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import GridSearchCV
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
@@ -35,6 +34,8 @@ print(bag.toarray())
 
 #%% TF-IDFを使って単語の関連性を評価
 tfidf = TfidfTransformer(use_idf=True, norm='l2', smooth_idf=True)
+# 表示桁数を指定
+np.set_printoptions(precision=2)
 print(tfidf.fit_transform(count.fit_transform(docs)).toarray())
 
 #%% テキストデータのクレンジング
@@ -50,7 +51,7 @@ def preprocessor(text):
 
 preprocessor(df.loc[0, 'review'][-50:])
 
-#全ての映画レビューにpreprocessorを適用
+# 全ての映画レビューにpreprocessorを適用
 df['review'] = df['review'].apply(preprocessor)
 
 #%% 文書をトークン化する
