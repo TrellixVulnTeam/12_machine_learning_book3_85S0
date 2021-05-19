@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import set_config
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -22,7 +23,7 @@ from scipy import interp
 from sklearn.pipeline import make_pipeline
 
 
-# データの準備
+#%% データの準備
 df = pd.read_csv('/Users/rukaoide/Library/Mobile Documents/\
 com~apple~CloudDocs/Documents/Python/12_machine_learning_book3/\
 ch6/wdbc.txt', header = None)
@@ -50,6 +51,10 @@ pipe_lr = make_pipeline(StandardScaler(), PCA(n_components=2),
 pipe_lr.fit(X_train, y_train)
 y_pred = pipe_lr.predict(X_test)
 print('Test Accuracy: %.3f' % pipe_lr.score(X_test, y_test))
+
+#%% パイプラインの図解
+set_config(display='diagram')
+pipe_lr
 
 
 #%% 層k分割交差法
