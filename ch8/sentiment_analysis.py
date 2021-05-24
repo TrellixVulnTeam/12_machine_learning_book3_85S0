@@ -1,4 +1,5 @@
 '''感情分析'''
+%cd /Users/rukaoide/Library/Mobile Documents/com~apple~CloudDocs/Documents/Python/12_machine_learning_book3/ch8
 import re
 import pandas as pd
 import numpy as np
@@ -14,9 +15,7 @@ from nltk.corpus import stopwords
 
 
 '''データ前処理'''
-df = pd.read_csv('/Users/rukaoide/Library/Mobile Documents/\
-com~apple~CloudDocs/Documents/Python/12_machine_learning_book3/\
-ch8/movie_data.csv', encoding='utf-8')
+df = pd.read_csv('movie_data.csv', encoding='utf-8')
 df.head()
 df.shape
 
@@ -73,6 +72,13 @@ nltk.download('stopwords')
 stop = stopwords.words('english')
 [w for w in tokenizer_porter('a runner likes running and runs a lot')[-10:]
     if w not in stop]
+
+
+#%% 全単語
+vocabulary = " ".join(df['review']).split(" ")
+print("全単語数", len(vocabulary))
+print("ユニークな単語数", len(set(vocabulary)))
+print(vocabulary[0:10])
 
 
 '''文書解析'''
