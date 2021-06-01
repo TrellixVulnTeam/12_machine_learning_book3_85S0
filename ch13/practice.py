@@ -1,5 +1,11 @@
+%cd /Users/rukaoide/Library/Mobile Documents/com~apple~CloudDocs/Documents/Python/12_machine_learning_book3/ch13
 import tensorflow as tf
+import tensorflow_datasets as tfds
 import numpy as np
+import pathlib
+import matplotlib.pyplot as plt
+import os
+
 %precision 3
 
 
@@ -195,3 +201,74 @@ for i, (batch_x, batch_y) in enumerate(ds):
 ds = ds_joint.batch(2).repeat(3).shuffle(len(t_x))
 for i, (batch_x, batch_y) in enumerate(ds):
     print(i, batch_x.shape, batch_y.numpy())
+
+
+# ディスク上のデータでデータセットを作成する
+#%% 画像データの確認
+imgdir_path = pathlib.Path('cat_dog_images')
+file_list = sorted([str(path) for path in imgdir_path.glob('*jpg')])
+print(file_list)
+
+#%% 画像の可視化
+fig = plt.figure(figsize=(10, 5))
+for i, file in enumerate(file_list):
+    img_raw = tf.io.read_file(file)
+    img = tf.image.decode_image(img_raw)
+    print('Image shape:', img.shape)
+    ax = fig.add_subplot(2, 3, i+1)
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.imshow(img)
+    ax.set_title(os.path.basename(file), size=15)
+
+plt.tight_layout()
+plt.show()
+
+#%% 犬:1、猫:2 ラベルづけ
+labels = [1 if 'dog' in os.path.basename(file) else 0 for file in file_list]
+print(labels)
+
+#%% テンソルの結合
+ds_files_labels = tf.data.Dataset.from_tensor_slices((file_list, labels))
+for item in ds_files_labels:
+    print(item[0].numpy(), item[1].numpy())
+
+#%% 前処理(サイズ変更)
+def load_and_preprocess(path, label):
+    image = tf.io.read_file(path)
+    image = tf.image.decode_jpeg(image, channels=3)
+    image = tf.image.resize(image, [img_height, img_width])
+    image /= 255.0
+    return image, label
+
+img_width, img_height = 120, 80
+ds_images_labels = ds_files_labels.map(load_and_preprocess)
+
+fig = plt.figure(figsize=(10, 5))
+for i, example in enumerate(ds_images_labels):
+    print(example[0].shape, example[1].numpy())
+    ax = fig.add_subplot(2, 3, i+1)
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.imshow(example[0])
+    ax.set_title('{}'.format(example[1].numpy()), size=15)
+
+plt.tight_layout()
+plt.show()
+
+
+# Tensorflowライブラリからデータセットを取り出す
+#%% 利用可能なデータセット数
+print(len(tfds.list_builders()))
+print(tfds.list_builders()[:5])
+
+#%% データセットの出力
+celeba_bldr = tfds.builder('celeb_a')
+
+print(celeba_bldr.info.features)
+print('\n', 30*"=", '\n')
+print(celeba_bldr.info.features.keys())
+print('\n', 30*"=", '\n')
+print(celeba_bldr.info.features['image'])
+print('\n', 30*"=", '\n')
+print(celeba_bldr.info.features['attributes'].keys())
+print('\n', 30*"=", '\n')
+print(celeba_bldr.info.citation)
