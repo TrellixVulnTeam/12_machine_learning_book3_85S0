@@ -56,7 +56,7 @@ def train(model, inputs, outputs, learning_rate):
 tf.random.set_seed(1)
 
 # ハイパーパラメータ
-num_epoch = 200
+num_epochs = 200
 log_steps = 100
 learning_rate = 0.001
 batch_size = 1
@@ -83,3 +83,62 @@ for i, batch in enumerate(ds_train):
     if i%log_steps==0:
         print('Epoch {:4d} Step {:2d} Loss {:6.4f}'.format(
             int(i/steps_per_epoch), i, loss_val))
+
+#%% 訓練したモデル調べてプロット
+print('Final Parameters:', model.w.numpy(), model.b.numpy())
+
+X_test = np.linspace(0, 9, num=100).reshape(-1, 1)
+X_test_norm = (X_test - np.mean(X_train)) / np.std(X_train)
+
+y_pred = model(tf.cast(X_test_norm, dtype=tf.float32))
+
+fig = plt.figure(figsize=(13, 5))
+ax = fig.add_subplot(1, 2, 1)
+plt.plot(X_train_norm, y_train, 'o', markersize=10)
+plt.plot(X_test_norm, y_pred, '--', lw=3)
+plt.legend(['Training examples', 'Linear Reg.'], fontsize=15)
+ax.set_xlabel('x', size=15)
+ax.set_ylabel('y', size=15)
+ax.tick_params(axis='both', which='major', labelsize=15)
+
+ax = fig.add_subplot(1, 2, 2)
+plt.plot(Ws, lw=3)
+plt.plot(bs, lw=3)
+plt.legend(['Weight w', 'Bias unit b'], fontsize=15)
+ax.set_xlabel('Iteration', size=15)
+ax.set_ylabel('Value', size=15)
+ax.tick_params(axis='both', which='major', labelsize=15)
+
+plt.show()
+
+
+#%% compileとfitを使ってモデルを訓練する
+tf.random.set_seed(1)
+model = MyModel()
+
+model.compile(optimizer='sgd',
+                loss=loss_fn,
+                metrics=['mae', 'mse'])
+
+model.fit(X_train_norm, y_train, epochs=num_epochs,
+        batch_size=batch_size, verbose=1)
+
+#%% 可視化
+print(model.w.numpy(), model.b.numpy())
+
+X_test = np.linspace(0, 9, num=100).reshape(-1, 1)
+X_test_norm = (X_test - np.mean(X_train)) / np.std(X_train)
+
+y_pred = model(tf.cast(X_test_norm, dtype=tf.float32))
+
+fig = plt.figure(figsize=(13, 5))
+ax = fig.add_subplot(1, 2, 1)
+plt.plot(X_train_norm, y_train, 'o', markersize=10)
+plt.plot(X_test_norm, y_pred, '--', lw=3)
+plt.legend(['Training Samples', 'Linear Regression'], fontsize=15)
+
+ax = fig.add_subplot(1, 2, 2)
+plt.plot(Ws, lw=3)
+plt.plot(bs, lw=3)
+plt.legend(['W', 'bias'], fontsize=15)
+plt.show()
